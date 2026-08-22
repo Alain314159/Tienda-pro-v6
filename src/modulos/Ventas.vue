@@ -11,7 +11,6 @@ import { n, fmtCant, fmtFH } from '../lib/utils'
 
 const e = useEstado()
 const ui = useUi()
-
 const busqueda = ref('')
 const carrito = ref([])
 const metodo = ref('efectivo')
@@ -20,7 +19,6 @@ const verHistorial = ref(false)
 const cobro = ref({ abierto: false, recibido: '' })
 const scanAbierto = ref(false)
 let scanner = null
-
 const favs = ref(JSON.parse(localStorage.getItem('tp6_favs') || '[]'))
 
 const lista = computed(() => {
@@ -29,7 +27,6 @@ const lista = computed(() => {
     (!q || (p.nombre + ' ' + (p.codigo || '')).toLowerCase().includes(q))).slice(0, 30)
 })
 const historial = computed(() => [...e.ventas].sort((a, b) => b.fecha - a.fecha).slice(0, 60))
-
 const totalCarrito = computed(() => carrito.value.reduce((t, it) => t + precioDe(it) * n(it.cant), 0))
 const gananciaCarrito = computed(() => carrito.value.reduce((t, it) => t + (precioDe(it) - n(it.costo)) * n(it.cant), 0))
 
@@ -63,20 +60,13 @@ function toggleFav(id) {
   localStorage.setItem('tp6_favs', JSON.stringify(favs.value))
 }
 
-function cambiarTipoVenta(t) {
-  tipoVenta.value = t
-}
-
-function abrirCobro() {
-  if (!carrito.value.length) return
-  cobro.value = { abierto: true, recibido: '' }
-}
+function cambiarTipoVenta(t) { tipoVenta.value = t }
+function abrirCobro() { if (!carrito.value.length) return; cobro.value = { abierto: true, recibido: '' } }
 
 async function confirmarVenta() {
   const res = await e.vender(carrito.value, { metodo: metodo.value, tipoVenta: tipoVenta.value })
   if (res.error) { ui.avisar('❌ ' + res.error); return }
-  carrito.value = []
-  cobro.value.abierto = false
+  carrito.value = []; cobro.value.abierto = false
   ui.avisar('✅ Venta registrada · ' + e.fmt(res.venta.total))
 }
 
@@ -134,7 +124,7 @@ onBeforeUnmount(() => { if (scanner) scanner.detener() })
         <button class="text-amber-500" @click="toggleFav(p.id)">{{ favs.includes(p.id) ? '★' : '☆' }}</button>
         <button class="bg-blue-600 text-white rounded-lg px-3 py-1 text-sm" @click="agregar(p)">+</button>
       </div>
-      <div v-if="!lista.length" class="p-3 text-sm text-slate-500">Sin coincidencias (o sin stock)</div>
+      <div v-if="!lista.length" class="p-3 text-sm text-slate-500">Sin coincidencias</div>
     </div>
 
     <div v-if="carrito.length" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-3 space-y-2">
@@ -157,7 +147,7 @@ onBeforeUnmount(() => { if (scanner) scanner.detener() })
           <option value="transferencia">🏦 Transferencia</option>
         </select>
         <button class="flex-1 bg-emerald-600 text-white rounded-lg py-2 font-bold" @click="abrirCobro">Cobrar</button>
-        <button class="px-2 text-slate-500" @click="carrito = []"></button>
+        <button class="px-2 text-slate-500" @click="carrito = []">🗑️</button>
       </div>
     </div>
 
@@ -166,9 +156,7 @@ onBeforeUnmount(() => { if (scanner) scanner.detener() })
     </button>
 
     <div v-if="verHistorial" class="space-y-2">
-      <div v-for="v in historial" :key="v.id"
-        class="bg-white dark:bg-slate-800 rounded-xl p-2 shadow-sm text-sm"
-        :class="v.anulada && 'opacity-50'">
+      <div v-for="v in historial" :key="v.id" class="bg-white dark:bg-slate-800 rounded-xl p-2 shadow-sm text-sm" :class="v.anulada && 'opacity-50'">
         <div class="flex justify-between gap-2">
           <span class="truncate">{{ v.items.map(x => x.nombre + ' ×' + fmtCant(x.cant)).join(', ') }}</span>
           <span class="font-bold shrink-0">{{ e.fmt(v.total) }}</span>
@@ -181,7 +169,6 @@ onBeforeUnmount(() => { if (scanner) scanner.detener() })
       </div>
     </div>
 
-    <!-- Cobro -->
     <div v-if="cobro.abierto" class="fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-sm">
         <h3 class="font-bold mb-2">Cobrar Venta</h3>
@@ -199,7 +186,6 @@ onBeforeUnmount(() => { if (scanner) scanner.detener() })
       </div>
     </div>
 
-    <!-- Escáner -->
     <div v-if="scanAbierto" class="fixed inset-0 z-[80] bg-black/90 flex flex-col items-center justify-center p-4">
       <div id="lector-codigos" class="w-full max-w-sm"></div>
       <button class="mt-4 bg-rose-600 text-white rounded-lg px-4 py-2" @click="cerrarScanner">Cerrar escáner</button>

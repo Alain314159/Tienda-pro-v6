@@ -1,7 +1,6 @@
 <template>
   <div v-if="!listo" class="min-h-screen flex items-center justify-center text-slate-500">Cargando…</div>
 
-  <!-- LOGIN -->
   <div v-else-if="!e.usuario" class="min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-sm bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6">
       <div class="text-center mb-5">
@@ -14,9 +13,13 @@
         class="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 mb-2" />
       <input v-model="email" type="email" placeholder="Correo"
         class="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 mb-2" />
-      <input v-model="pass" type="password" placeholder="Contraseña"
-        class="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900"
-        @keyup.enter="entrar" />
+      <div class="relative mb-2">
+        <input v-model="pass" :type="verPass ? 'text' : 'password'" placeholder="Contraseña"
+          class="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 pr-16 bg-white dark:bg-slate-900"
+          @keyup.enter="entrar" />
+        <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] underline text-slate-500"
+          @click="verPass = !verPass">{{ verPass ? 'Ocultar' : 'Ver' }}</button>
+      </div>
       <button class="w-full bg-blue-600 text-white rounded-lg py-2 mt-3 disabled:opacity-50" :disabled="cargando" @click="entrar">
         {{ cargando ? 'Entrando…' : (modoRegistro ? 'Crear cuenta y entrar' : 'Entrar') }}
       </button>
@@ -27,13 +30,9 @@
       <button class="w-full bg-slate-200 dark:bg-slate-700 rounded-lg py-2 text-sm" @click="entrarLocal">
         Entrar sin cuenta (modo local)
       </button>
-      <p class="text-[11px] text-slate-400 mt-3">
-        El modo local guarda todo solo en este teléfono. Con cuenta, tus datos se respaldan y sincronizan en la nube.
-      </p>
     </div>
   </div>
 
-  <!-- APP -->
   <template v-else>
     <header class="sticky top-0 z-40 bg-white dark:bg-slate-800 shadow flex items-center gap-1 px-2 py-2">
       <button class="p-2 text-xl" @click="menuAbierto = !menuAbierto">☰</button>
@@ -80,20 +79,19 @@
 import { ref, computed, onMounted } from 'vue'
 import { useEstado } from './stores/estado'
 import { useUi } from './stores/ui'
-import { estadoSync, refrescarPendientes } from './lib/sync'
+import { estadoSync, refrescarPendientes, descubrirTiendas, activarTienda } from './lib/sync'
 import { sesionActual, login, registrar, entrarModoLocal, esModoLocal, logout } from './lib/auth'
 import Ui from './componentes/Ui.vue'
 
 const e = useEstado()
 const ui = useUi()
-
 const listo = ref(false)
 const email = ref(''), pass = ref(''), nombre = ref('')
+const verPass = ref(false)
 const modoRegistro = ref(false), cargando = ref(false), errorLogin = ref('')
 const menuAbierto = ref(false)
 const actual = computed({ get: () => ui.modulo, set: (v) => ui.irA(v) })
 
-/* Módulos auto-descubiertos: cada .vue de src/modulos exporta su meta */
 const mods = import.meta.glob('./modulos/*.vue', { eager: true })
 const listaMods = Object.entries(mods)
   .map(([ruta, m]) => ({ ...m.meta, comp: m.default }))
@@ -114,6 +112,11 @@ async function entrar() {
       ? await registrar(email.value.trim(), pass.value, nombre.value.trim() || email.value.trim())
       : await login(email.value.trim(), pass.value)
     await e.iniciar({ id: s.$id, nombre: s.name || email.value.trim(), rol: 'dueno' }, false)
+    const mias = await descubrirTiendas(s.$id)
+    if (mias.length) {
+      e.tiendaId = mias[0].id
+      await activarTienda(mias[0].id)
+    }
     await e.sincronizarAhora()
   } catch (err) {
     errorLogin.value = 'Error: ' + ((err && err.message) || err)
@@ -140,6 +143,14 @@ onMounted(async () => {
   const s = await sesionActual()
   if (s) {
     await e.iniciar({ id: s.$id, nombre: s.name || 'Usuario', rol: 'dueno' }, false)
+    try {
+      const mias = await descubrirTiendas(s.$id)
+      if (mias.length) {
+        e.tiendaId = mias[0].id
+        await activarTienda(mias[0].id)
+        await e.recargar()
+      }
+    } catch (err) {}
   } else if (esModoLocal()) {
     await e.iniciar({ id: 'local', nombre: 'Local', rol: 'dueno' }, true)
   }
