@@ -1,0 +1,5 @@
+* { -webkit-tap-highlight-color: transparent; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+.fade-enter-active, .fade-leave-active { transition: opacity .18s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
