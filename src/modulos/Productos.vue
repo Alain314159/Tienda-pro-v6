@@ -10,7 +10,6 @@ import { n, fmtCant, fmtFH } from '../lib/utils'
 
 const e = useEstado()
 const ui = useUi()
-
 const formVacio = { id: null, nombre: '', codigo: '', categoria: '', unidad: 'u', precio: '', precioMayor: '', cantMinMayor: '', stockBajo: '' }
 const form = ref({ ...formVacio })
 const mostrarArchivados = ref(false)
@@ -60,14 +59,15 @@ function badge(p) {
           class="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900" />
         <input v-model="form.precio" type="number" step="any" placeholder="Precio detal"
           class="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900" />
-        <input v-model="form.precioMayor" type="number" step="any" placeholder="Precio mayorista"
-          class="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900" />
-        <input v-model="form.cantMinMayor" type="number" step="any" placeholder="Mínimo mayorista"
-          class="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900" />
+        <template v-if="e.config.mayoristaActivo">
+          <input v-model="form.precioMayor" type="number" step="any" placeholder="Precio mayorista"
+            class="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900" />
+          <input v-model="form.cantMinMayor" type="number" step="any" placeholder="Mínimo mayorista"
+            class="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900" />
+        </template>
         <input v-model="form.stockBajo" type="number" step="any" placeholder="Alerta stock bajo"
           class="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900" />
       </div>
-      <p class="text-[11px] text-slate-400">Define la unidad si vendes por peso o volumen (kg, lb, gr, litro). Si es unidad suelta, pon "u".</p>
       <div class="flex gap-2">
         <button class="flex-1 bg-blue-600 text-white rounded-lg py-2 font-bold" @click="guardar">{{ form.id ? 'Actualizar' : 'Guardar' }}</button>
         <button v-if="form.id" class="px-3 bg-slate-200 dark:bg-slate-700 rounded-lg" @click="form = { ...formVacio }">Cancelar</button>

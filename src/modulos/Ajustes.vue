@@ -15,14 +15,9 @@ const ui = useUi()
 const pinNuevo = ref('')
 const archivo = ref(null)
 
-async function cfg(parche, msg) {
-  e.config = await setConfig(parche)
-  if (msg) ui.avisar(msg)
-}
-async function guardarPin() {
-  await cfg({ pin: pinNuevo.value }, '✅ PIN ' + (pinNuevo.value ? 'actualizado' : 'eliminado'))
-  pinNuevo.value = ''
-}
+async function cfg(parche, msg) { e.config = await setConfig(parche); if (msg) ui.avisar(msg) }
+async function guardarPin() { await cfg({ pin: pinNuevo.value }, '✅ PIN ' + (pinNuevo.value ? 'actualizado' : 'eliminado')); pinNuevo.value = '' }
+
 async function exportar() {
   const data = {
     version: 6, exportado: Date.now(), config: e.config,
@@ -31,14 +26,17 @@ async function exportar() {
     patrimonioMovs: e.patrimonioMovs, ajustes: e.ajustes, periodos: e.periodos, auditoria: e.auditoria
   }
   descargarArchivo('respaldo-tiendapro-' + Date.now() + '.json', JSON.stringify(data))
-  ui.avisar('💾 Respaldo exportado. Guárdalo en Drive o envíalo por WhatsApp.')
+  ui.avisar('💾 Respaldo exportado')
 }
+
 function onFile(ev) { archivo.value = ev.target.files[0] }
+
 async function importar() {
   if (!archivo.value) { ui.avisar('❌ Elige un archivo primero'); return }
-  const ok = await ui.confirmar('Importar datos', 'Los datos del respaldo se AGREGARÁN a los actuales (útil para migrar desde la v5.2). ¿Continuar?')
+  const ok = await ui.confirmar('Importar datos', 'Esto REEMPLAZA los datos del teléfono por los del respaldo. ¿Continuar?')
   if (!ok) return
   const txt = await archivo.value.text()
+  for (const t of ['productos', 'categorias', 'lotes', 'ventas', 'compras', 'cajaMovs', 'arqueos', 'patrimonioMovs', 'ajustes', 'periodos', 'auditoria']) await db[t].clear()
   const res = await migrarV5(txt)
   await e.recargar()
   ui.avisar('✅ Importado: ' + res.productos + ' productos, ' + res.ventas + ' ventas, ' + res.compras + ' compras')
